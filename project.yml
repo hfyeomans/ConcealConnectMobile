@@ -1,8 +1,8 @@
 name: ConcealConnect
 options:
-  bundleIdPrefix: com.concealnetwork
+  bundleIdPrefix: com.Conceal
   deploymentTarget:
-    iOS: "16.0"
+    iOS: "18.2"
 
 targets:
   ConcealConnect:

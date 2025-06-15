@@ -33,7 +33,7 @@ cat > App/Resources/Info.plist <<'PLIST'
  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-  <key>CFBundleIdentifier</key><string>com.concealnetwork.ConcealConnect</string>
+  <key>CFBundleIdentifier</key><string>com.Conceal.ConcealConnect</string>
   <key>CFBundleName</key><string>ConcealConnect</string>
   <key>CFBundleExecutable</key><string>$(EXECUTABLE_NAME)</string>
 </dict>
@@ -46,7 +46,7 @@ cat > Extensions/PacketTunnel/Resources/Info.plist <<'PLIST'
  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-  <key>CFBundleIdentifier</key><string>com.concealnetwork.PacketTunnel</string>
+  <key>CFBundleIdentifier</key><string>com.Conceal.PacketTunnel</string>
   <key>NSExtension</key>
   <dict>
     <key>NSExtensionPointIdentifier</key><string>com.apple.networkextension.packet-tunnel</string>
@@ -70,7 +70,7 @@ XML
 cat > project.yml <<'YAML'
 name: ConcealConnect
 options:
-  bundleIdPrefix: com.concealnetwork
+  bundleIdPrefix: com.Conceal
   deploymentTarget:
     iOS: "16.0"
 
