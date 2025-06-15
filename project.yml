@@ -1,0 +1,24 @@
+name: ConcealConnect
+options:
+  bundleIdPrefix: com.concealnetwork
+  deploymentTarget:
+    iOS: "16.0"
+
+targets:
+  ConcealConnect:
+    type: application
+    platform: iOS
+    sources: [App]
+    resources: [App/Resources]
+    info:
+      path: App/Resources/Info.plist
+
+  PacketTunnel:
+    type: system-extension
+    platform: iOS
+    sources: [Extensions/PacketTunnel]
+    resources: [Extensions/PacketTunnel/Resources]
+    info:
+      path: Extensions/PacketTunnel/Resources/Info.plist
+    entitlements:
+      path: Extensions/PacketTunnel/PacketTunnel.entitlements
