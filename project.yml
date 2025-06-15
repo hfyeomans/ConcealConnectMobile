@@ -5,6 +5,13 @@ options:
     iOS: "18.2"
 
 targets:
+  TunnelCore:
+    type: framework
+    platform: iOS
+    sources: [TunnelCore]              # Swift wrapper, C headers
+    headers: [TunnelCore/include]
+    linkLibraries:
+      - path: TunnelCore/lib/libquiche-universal.a
   ConcealConnect:
     type: application
     platform: iOS
