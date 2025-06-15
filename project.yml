@@ -1,17 +1,33 @@
 name: ConcealConnect
 options:
-  bundleIdPrefix: com.Conceal
+  bundleIdPrefix: com.conceal
   deploymentTarget:
-    iOS: "18.2"
+    iOS: "18.5"
 
 targets:
   TunnelCore:
     type: framework
     platform: iOS
-    sources: [TunnelCore]              # Swift wrapper, C headers
-    headers: [TunnelCore/include]
+    sources:
+      - TunnelCore/MasqueClient.swift
+      - TunnelCore/include
+      - TunnelCore/masquelib/masque_client.c
+      - TunnelCore/masquelib/quiche_stub.c
+    headers:
+      public:                                   # ◀─ add this
+        - TunnelCore/include/**                 #   expose the header folder
+      moduleMap: TunnelCore/include/module.modulemap   # ◀─ add this
     linkLibraries:
       - path: TunnelCore/lib/libquiche-universal.a
+    settings:
+      GENERATE_INFOPLIST_FILE: YES
+      LIBRARY_SEARCH_PATHS: $(SRCROOT)/TunnelCore/lib
+      OTHER_SWIFT_FLAGS: -Xcc -fmodule-map-file=$(SRCROOT)/TunnelCore/include/module.modulemap
+      HEADER_SEARCH_PATHS: 
+        - $(SRCROOT)/TunnelCore/include
+        - $(SRCROOT)/TunnelCore/masquelib
+        - $(SRCROOT)/TunnelCore/masquelib/quiche/include
+
   ConcealConnect:
     type: application
     platform: iOS
@@ -19,9 +35,11 @@ targets:
     resources: [App/Resources]
     info:
       path: App/Resources/Info.plist
+    dependencies:
+      - target: TunnelCore
 
   PacketTunnel:
-    type: system-extension
+    type: app-extension
     platform: iOS
     sources: [Extensions/PacketTunnel]
     resources: [Extensions/PacketTunnel/Resources]
@@ -29,3 +47,21 @@ targets:
       path: Extensions/PacketTunnel/Resources/Info.plist
     entitlements:
       path: Extensions/PacketTunnel/PacketTunnel.entitlements
+    dependencies:
+      - target: TunnelCore
+
+  MasqueClientTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [Tests/MasqueClientTests]
+    settings:
+      GENERATE_INFOPLIST_FILE: YES
+      PRODUCT_BUNDLE_IDENTIFIER: com.conceal.MasqueClientTests
+      OTHER_SWIFT_FLAGS: -Xcc -fmodule-map-file=$(SRCROOT)/TunnelCore/include/module.modulemap
+      HEADER_SEARCH_PATHS: 
+        - $(SRCROOT)/TunnelCore/include
+        - $(SRCROOT)/TunnelCore/masquelib
+      CODE_SIGNING_ALLOWED: NO
+      CODE_SIGN_IDENTITY: ""
+    dependencies:
+      - target: TunnelCore
