@@ -1,0 +1,3 @@
+[submodule "TunnelCore/masquelib"]
+	path = TunnelCore/masquelib
+	url = https://github.com/hfyeomans/conceal-quiche.git
