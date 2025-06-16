@@ -43,7 +43,7 @@ class VPNManager: ObservableObject {
         // Configure the tunnel provider protocol
         let tunnelProtocol = NETunnelProviderProtocol()
         tunnelProtocol.providerBundleIdentifier = "com.Conceal.PacketTunnel"
-        tunnelProtocol.serverAddress = "masque.test"
+        tunnelProtocol.serverAddress = "10.0.150.43:6121"
         
         // Hard-code domain list for TP-2: ["*.masque.test"]
         let evaluateRule = NEOnDemandRuleEvaluateConnection()

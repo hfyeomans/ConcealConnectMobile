@@ -21,7 +21,7 @@ The project consists of three main components:
 - Network Extension integration with iOS
 - Real-time VPN status monitoring
 - On-demand connection rules
-- IPv4/UDP packet forwarding through MASQUE tunnel
+- IPv4/TCP and IPv4/UDP packet forwarding through MASQUE tunnel
 - Bidirectional data flow with continuous polling
 
 ## Project Status
@@ -44,8 +44,8 @@ The project consists of three main components:
 
 #### TP-3: Forward packets ✅
 - Implemented packetFlow.readPackets() to capture outbound packets
-- Added IPv4/UDP packet filtering (drops non-IPv4/UDP traffic)
-- Forward valid packets through MasqueClient.send() with stream tracking
+- Added IPv4 packet filtering with TCP/UDP protocol support
+- Forward IPv4/TCP and IPv4/UDP packets through MasqueClient.send()
 - Implemented continuous polling via MasqueClient.poll()
 - Write inbound packets back via packetFlow.writePackets()
 - Configured tunnel network settings (10.0.0.2/24, Google DNS)
@@ -80,9 +80,9 @@ poll(maxBytes: Int) -> (UInt64, Data)?  // Returns stream ID and data
 ```
 
 ### Packet Forwarding Architecture
-- **Outbound**: iOS → packetFlow.readPackets() → Filter IPv4/UDP → MasqueClient.send() → MASQUE Tunnel
+- **Outbound**: iOS → packetFlow.readPackets() → Filter IPv4/TCP/UDP → MasqueClient.send() → MASQUE Tunnel
 - **Inbound**: MASQUE Tunnel → MasqueClient.poll() → packetFlow.writePackets() → iOS
-- **Filtering**: Only IPv4 (AF_INET) packets with UDP protocol (17) are forwarded
+- **Filtering**: IPv4 (AF_INET) packets with TCP (6) or UDP (17) protocols are forwarded
 - **Performance**: Separate dispatch queues for reading and polling operations
 
 ### Dependencies
