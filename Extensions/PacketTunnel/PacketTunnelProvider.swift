@@ -5,6 +5,10 @@ import os.log
 // Protocol family constants
 private let AF_INET: Int32 = 2  // IPv4
 
+// IP protocol constants
+private let IPPROTO_TCP: UInt8 = 6
+private let IPPROTO_UDP: UInt8 = 17
+
 final class PacketTunnelProvider: NEPacketTunnelProvider {
     
     private var masqueClient: MasqueClient?
@@ -113,7 +117,7 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
             return
         }
         
-        // Parse IPv4 header to check if it's UDP
+        // Parse IPv4 header to check protocol
         guard packet.count >= 20 else {
             logger.debug("Dropping packet: too small for IPv4 header")
             return
@@ -122,11 +126,13 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
         // Get IP protocol field (byte 9 in IPv4 header)
         let ipProtocol = packet[9]
         
-        // Check if it's UDP (protocol number 17)
-        guard ipProtocol == 17 else {
-            logger.debug("Dropping non-UDP packet (IP protocol: \(ipProtocol))")
+        // Check if it's UDP or TCP
+        guard ipProtocol == IPPROTO_UDP || ipProtocol == IPPROTO_TCP else {
+            logger.debug("Dropping packet: unsupported IP protocol \(ipProtocol) (only TCP/UDP supported)")
             return
         }
+        
+        let protocolName = ipProtocol == IPPROTO_UDP ? "UDP" : "TCP"
         
         // Send the packet through MASQUE
         do {
@@ -136,7 +142,7 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
             }
             
             let streamId = client.send(packet)
-            logger.debug("Sent packet of size \(packet.count) bytes via MASQUE (stream ID: \(streamId))")
+            logger.debug("Sent \(protocolName) packet of size \(packet.count) bytes via MASQUE (stream ID: \(streamId))")
         } catch {
             logger.error("Failed to send packet via MASQUE: \(error.localizedDescription)")
         }
