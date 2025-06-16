@@ -35,6 +35,8 @@ targets:
     resources: [App/Resources]
     info:
       path: App/Resources/Info.plist
+    entitlements:
+      path: App/App.entitlements
     dependencies:
       - target: TunnelCore
 
