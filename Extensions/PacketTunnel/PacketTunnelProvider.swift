@@ -20,8 +20,8 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
         masqueClient = MasqueClient()
         
         // TODO: Extract server host/port from options or configuration
-        let serverHost = "masque.test" // Hard-coded for now
-        let serverPort: UInt16 = 443
+        let serverHost = "10.0.150.43" // Local test server on network
+        let serverPort: UInt16 = 6121
         
         do {
             // Call connect() on MasqueClient
