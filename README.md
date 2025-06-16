@@ -21,6 +21,8 @@ The project consists of three main components:
 - Network Extension integration with iOS
 - Real-time VPN status monitoring
 - On-demand connection rules
+- IPv4/UDP packet forwarding through MASQUE tunnel
+- Bidirectional data flow with continuous polling
 
 ## Project Status
 
@@ -40,22 +42,28 @@ The project consists of three main components:
 - Added NetworkExtension entitlements
 - Created basic UI to display VPN status
 
-### Upcoming Milestones
+#### TP-3: Forward packets ✅
+- Implemented packetFlow.readPackets() to capture outbound packets
+- Added IPv4/UDP packet filtering (drops non-IPv4/UDP traffic)
+- Forward valid packets through MasqueClient.send() with stream tracking
+- Implemented continuous polling via MasqueClient.poll()
+- Write inbound packets back via packetFlow.writePackets()
+- Configured tunnel network settings (10.0.0.2/24, Google DNS)
+- Added dedicated dispatch queues for packet operations
 
-#### TP-3: Forward packets (In Progress)
-- Implement packetFlow.readPackets() to wrap IPv4/UDP packets in MASQUE
-- Implement poll() to pass inbound bytes to packetFlow.writePackets()
-- Drop non-IPv4/UDP packets initially
+### Upcoming Milestones
 
 #### TP-4: Simple lifecycle UI
 - Add "Connect" toggle in the app
-- Implement manual connection controls
+- Implement manual connection controls with NETunnelProviderManager
 - Enhance status display with connection details
+- Allow manual start/stop of VPN tunnel
 
 #### TP-5: Smoke test on device
 - Test on iOS 18 Simulator or real device
 - Verify http://masque.test loads through tunnel
 - Validate connection stability
+- Ensure no crashes during repeated connect/disconnect cycles
 
 ## Technical Details
 
@@ -70,6 +78,12 @@ send(_ data: Data) -> UInt64  // Returns stream ID
 // Receive data from tunnel
 poll(maxBytes: Int) -> (UInt64, Data)?  // Returns stream ID and data
 ```
+
+### Packet Forwarding Architecture
+- **Outbound**: iOS → packetFlow.readPackets() → Filter IPv4/UDP → MasqueClient.send() → MASQUE Tunnel
+- **Inbound**: MASQUE Tunnel → MasqueClient.poll() → packetFlow.writePackets() → iOS
+- **Filtering**: Only IPv4 (AF_INET) packets with UDP protocol (17) are forwarded
+- **Performance**: Separate dispatch queues for reading and polling operations
 
 ### Dependencies
 - iOS 18.5+
