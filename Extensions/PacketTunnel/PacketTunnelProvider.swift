@@ -58,8 +58,6 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
             
             // Configure DNS
             let dnsSettings = NEDNSSettings(servers: ["8.8.8.8", "8.8.4.4"])
-            // Match all domains to ensure they go through the tunnel
-            dnsSettings.matchDomains = [""]
             tunnelSettings.dnsSettings = dnsSettings
             
             // Apply tunnel settings
