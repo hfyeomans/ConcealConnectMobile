@@ -17,8 +17,14 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
     private let packetQueue = DispatchQueue(label: "com.conceal.PacketTunnel.packets", qos: .userInitiated)
     private let pollQueue = DispatchQueue(label: "com.conceal.PacketTunnel.poll", qos: .userInitiated)
     
+    override init() {
+        super.init()
+        logger.log("PacketTunnelProvider initialized")
+    }
+    
     override func startTunnel(options: [String : NSObject]?, completionHandler: @escaping (Error?) -> Void) {
         logger.log("Starting packet tunnel provider")
+        logger.log("Options received: \(String(describing: options))")
         
         // Instantiate MasqueClient
         masqueClient = MasqueClient()
@@ -26,6 +32,8 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
         // TODO: Extract server host/port from options or configuration
         let serverHost = "10.0.150.43" // Local test server on network
         let serverPort: UInt16 = 6121
+        
+        logger.log("Attempting to connect to MASQUE server at \(serverHost):\(serverPort)")
         
         do {
             // Call connect() on MasqueClient
