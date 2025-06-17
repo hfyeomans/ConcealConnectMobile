@@ -39,6 +39,8 @@ targets:
       path: App/App.entitlements
     dependencies:
       - target: TunnelCore
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: com.conceal.concealconnect
 
   PacketTunnel:
     type: app-extension
@@ -47,10 +49,20 @@ targets:
     resources: [Extensions/PacketTunnel/Resources]
     info:
       path: Extensions/PacketTunnel/Resources/Info.plist
+      properties:
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.networkextension.packet-tunnel
+          NSExtensionPrincipalClass: PacketTunnel.PacketTunnelProvider
     entitlements:
       path: Extensions/PacketTunnel/PacketTunnel.entitlements
     dependencies:
       - target: TunnelCore
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: com.conceal.concealconnect.PacketTunnel
+      OTHER_SWIFT_FLAGS: -Xcc -fmodule-map-file=$(SRCROOT)/TunnelCore/include/module.modulemap
+      HEADER_SEARCH_PATHS: 
+        - $(SRCROOT)/TunnelCore/include
+        - $(SRCROOT)/TunnelCore/masquelib
 
   MasqueClientTests:
     type: bundle.unit-test
