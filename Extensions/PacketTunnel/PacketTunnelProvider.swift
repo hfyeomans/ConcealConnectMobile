@@ -57,7 +57,10 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
             tunnelSettings.ipv4Settings = ipv4Settings
             
             // Configure DNS
-            tunnelSettings.dnsSettings = NEDNSSettings(servers: ["8.8.8.8", "8.8.4.4"])
+            let dnsSettings = NEDNSSettings(servers: ["8.8.8.8", "8.8.4.4"])
+            // Match all domains to ensure they go through the tunnel
+            dnsSettings.matchDomains = [""]
+            tunnelSettings.dnsSettings = dnsSettings
             
             // Apply tunnel settings
             setTunnelNetworkSettings(tunnelSettings) { [weak self] error in
@@ -167,6 +170,16 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
         }
         
         let protocolName = ipProtocol == IPPROTO_UDP ? "UDP" : "TCP"
+        
+        // Debug: Log specific ports
+        if packet.count >= 24 {
+            let destPort = (UInt16(packet[22]) << 8) | UInt16(packet[23])
+            if destPort == 53 {
+                logger.debug("DNS query detected on port 53")
+            } else if destPort == 80 || destPort == 6121 {
+                logger.debug("HTTP request detected to port \(destPort)")
+            }
+        }
         
         // Send the packet through MASQUE
         do {
