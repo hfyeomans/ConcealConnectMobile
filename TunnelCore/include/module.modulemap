@@ -1,0 +1,4 @@
+module MasqueC {
+  header "masque.h"
+  export *
+}
