@@ -68,7 +68,7 @@ final class VPNManager: ObservableObject {
         
         // Configure the tunnel provider protocol
         let tunnelProtocol = NETunnelProviderProtocol()
-        tunnelProtocol.providerBundleIdentifier = "com.Conceal.PacketTunnel"
+        tunnelProtocol.providerBundleIdentifier = "com.conceal.concealconnect.PacketTunnel"
         tunnelProtocol.serverAddress = "Conceal PA"  // Display name, actual server is in provider
         
         // Configure the tunnel
