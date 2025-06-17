@@ -39,6 +39,9 @@ targets:
       path: App/App.entitlements
     dependencies:
       - target: TunnelCore
+      - target: PacketTunnel
+        embed: true
+        codeSign: true
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: com.conceal.concealconnect
 
@@ -79,3 +82,20 @@ targets:
       CODE_SIGN_IDENTITY: ""
     dependencies:
       - target: TunnelCore
+
+schemes:
+  ConcealConnect:
+    build:
+      targets:
+        ConcealConnect: all
+        PacketTunnel: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release
