@@ -30,7 +30,7 @@ struct ContentView: View {
                         .font(.title2.weight(.semibold))
                 }
                 .toggleStyle(SwitchToggleStyle())
-                .disabled(vpnManager.status == .reasserting)
+                .disabled(vpnManager.isLoading || vpnManager.status == .reasserting)
                 .padding(.horizontal, 40)
                 
                 Text(statusText)
@@ -41,6 +41,16 @@ struct ContentView: View {
             Spacer()
             
             VStack(spacing: 8) {
+                #if targetEnvironment(simulator)
+                Text("⚠️ Simulator Detected")
+                    .font(.caption.weight(.semibold))
+                    .foregroundColor(.orange)
+                
+                Text("Please run on a real iOS device for VPN functionality")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                #else
                 Text("On-Demand Rules")
                     .font(.caption.weight(.semibold))
                     .foregroundColor(.secondary)
@@ -48,6 +58,7 @@ struct ContentView: View {
                 Text("Auto-connects for *.masque.test domains")
                     .font(.caption)
                     .foregroundColor(.secondary)
+                #endif
             }
             .padding(.bottom, 40)
         }
@@ -56,6 +67,13 @@ struct ContentView: View {
     }
     
     private var statusText: String {
+        #if targetEnvironment(simulator)
+        return "VPN not supported in Simulator"
+        #else
+        if vpnManager.isLoading {
+            return "Loading configuration..."
+        }
+        
         switch vpnManager.status {
         case .connected:
             return "Connected to MASQUE relay"
@@ -72,5 +90,6 @@ struct ContentView: View {
         @unknown default:
             return "Unknown status"
         }
+        #endif
     }
 }

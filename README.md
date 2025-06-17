@@ -18,6 +18,7 @@ The project consists of three main components:
 
 - MASQUE protocol implementation using libquiche
 - Automatic VPN connection for configured domains (*.masque.test)
+- Manual VPN control with "Private Access" toggle switch
 - Network Extension integration with iOS
 - Real-time VPN status monitoring
 - On-demand connection rules
@@ -51,13 +52,13 @@ The project consists of three main components:
 - Configured tunnel network settings (10.0.0.2/24, Google DNS)
 - Added dedicated dispatch queues for packet operations
 
-### Upcoming Milestones
+#### TP-4: Simple lifecycle UI ✅
+- Added "Private Access" toggle switch in the app
+- Implemented manual connection controls via VPNManager.toggle()
+- Real-time status display showing connection state
+- Automatic disabling of on-demand rules when using manual control
 
-#### TP-4: Simple lifecycle UI
-- Add "Connect" toggle in the app
-- Implement manual connection controls with NETunnelProviderManager
-- Enhance status display with connection details
-- Allow manual start/stop of VPN tunnel
+### Upcoming Milestones
 
 #### TP-5: Smoke test on device
 - Test on iOS 18 Simulator or real device
