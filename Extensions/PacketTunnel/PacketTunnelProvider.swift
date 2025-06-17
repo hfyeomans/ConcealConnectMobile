@@ -57,7 +57,7 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
             tunnelSettings.ipv4Settings = ipv4Settings
             
             // Configure DNS
-            let dnsSettings = NEDNSSettings(servers: ["8.8.8.8", "8.8.4.4"])
+            let dnsSettings = NEDNSSettings(servers: ["10.0.150.251", "10.0.150.252"])
             dnsSettings.matchDomains = ["masque.test"] // Only tunnel masque.test traffic
             tunnelSettings.dnsSettings = dnsSettings
             
