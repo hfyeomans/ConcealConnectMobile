@@ -53,10 +53,11 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
             
             // Configure IPv4 settings
             let ipv4Settings = NEIPv4Settings(addresses: ["10.0.0.2"], subnetMasks: ["255.255.255.0"])
-            ipv4Settings.includedRoutes = [] // Split tunnel - no default route
+            // Use default route to enable tunnel, but DNS match domains will control what actually uses it
+            ipv4Settings.includedRoutes = [NEIPv4Route.default()]
             tunnelSettings.ipv4Settings = ipv4Settings
             
-            // Configure DNS
+            // Configure DNS for split tunneling by domain
             let dnsSettings = NEDNSSettings(servers: ["10.0.150.251", "10.0.150.252"])
             dnsSettings.matchDomains = ["masque.test"] // Only tunnel masque.test traffic
             tunnelSettings.dnsSettings = dnsSettings
