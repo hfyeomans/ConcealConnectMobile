@@ -33,7 +33,7 @@ This error occurs when toggling the VPN switch and indicates that the VPN config
   ```xml
   <key>com.apple.security.application-groups</key>
   <array>
-      <string>group.com.Conceal.shared</string>
+      <string>group.com.conceal.shared</string>
   </array>
   ```
 

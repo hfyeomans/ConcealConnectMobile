@@ -17,7 +17,7 @@ cat > App/App.entitlements << 'EOF'
 	</array>
 	<key>com.apple.security.application-groups</key>
 	<array>
-		<string>group.com.Conceal.shared</string>
+		<string>group.com.conceal.shared</string>
 	</array>
 </dict>
 </plist>
