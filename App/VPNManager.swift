@@ -9,6 +9,7 @@ final class VPNManager: ObservableObject {
     
     @Published var isConnected = false
     @Published var status: NEVPNStatus = .invalid
+    @Published var isLoading = true
     
     static let shared = VPNManager()
     
@@ -20,35 +21,56 @@ final class VPNManager: ObservableObject {
     
     /// Loads the existing tunnel configuration or creates a new one
     func loadTunnelConfiguration() {
-        NETunnelProviderManager.loadAllFromPreferences { [weak self] managers, error in
+        isLoading = true
+        ensureManager { [weak self] manager in
             guard let self = self else { return }
+            self.tunnelManager = manager
+            self.isLoading = false
+            self.observeStatus()
+        }
+    }
+    
+    /// Ensures a tunnel manager exists, creating one if needed
+    private func ensureManager(completion: @escaping (NETunnelProviderManager?) -> Void) {
+        NETunnelProviderManager.loadAllFromPreferences { [weak self] managers, error in
+            guard let self = self else { 
+                completion(nil)
+                return 
+            }
             
             if let error = error {
                 self.logger.error("Failed to load tunnel managers: \(error.localizedDescription)")
+                completion(nil)
                 return
             }
             
             if let existingManager = managers?.first {
                 self.logger.info("Using existing tunnel manager")
-                self.tunnelManager = existingManager
-                self.observeStatus()
-            } else {
-                self.logger.info("No existing tunnel manager found, creating new one")
-                self.createTunnelConfiguration()
+                completion(existingManager)
+                return
             }
+            
+            // First launch: create and save a new manager
+            self.logger.info("First launch: creating new tunnel manager")
+            self.createAndSaveManager(completion: completion)
         }
     }
     
-    /// Creates a new tunnel provider configuration with on-demand rules
-    private func createTunnelConfiguration() {
+    /// Creates and saves a new tunnel provider configuration
+    private func createAndSaveManager(completion: @escaping (NETunnelProviderManager?) -> Void) {
         let tunnelManager = NETunnelProviderManager()
         
         // Configure the tunnel provider protocol
         let tunnelProtocol = NETunnelProviderProtocol()
         tunnelProtocol.providerBundleIdentifier = "com.Conceal.PacketTunnel"
-        tunnelProtocol.serverAddress = "10.0.150.43:6121"
+        tunnelProtocol.serverAddress = "Conceal PA"  // Display name, actual server is in provider
         
-        // Hard-code domain list for TP-2: ["*.masque.test"]
+        // Configure the tunnel
+        tunnelManager.protocolConfiguration = tunnelProtocol
+        tunnelManager.localizedDescription = "Conceal Private Access"
+        tunnelManager.isEnabled = true
+        
+        // On-demand rule for masque.test domains
         let evaluateRule = NEOnDemandRuleEvaluateConnection()
         evaluateRule.connectionRules = [
             NEEvaluateConnectionRule(
@@ -57,28 +79,23 @@ final class VPNManager: ObservableObject {
             )
         ]
         evaluateRule.interfaceTypeMatch = .any
-        
-        // Set up on-demand rules
         tunnelManager.onDemandRules = [evaluateRule]
-        tunnelManager.isOnDemandEnabled = true
-        
-        // Configure the tunnel
-        tunnelManager.protocolConfiguration = tunnelProtocol
-        tunnelManager.localizedDescription = "ConcealConnect MASQUE Tunnel"
-        tunnelManager.isEnabled = true
+        tunnelManager.isOnDemandEnabled = false  // Start with manual control
         
         // Save the configuration
         tunnelManager.saveToPreferences { [weak self] error in
-            guard let self = self else { return }
+            guard let self = self else { 
+                completion(nil)
+                return 
+            }
             
             if let error = error {
                 self.logger.error("Failed to save tunnel configuration: \(error.localizedDescription)")
-                return
+                completion(nil)
+            } else {
+                self.logger.info("Tunnel configuration saved successfully")
+                completion(tunnelManager)
             }
-            
-            self.logger.info("Tunnel configuration saved successfully")
-            self.tunnelManager = tunnelManager
-            self.observeStatus()
         }
     }
     
@@ -112,7 +129,13 @@ final class VPNManager: ObservableObject {
     /// Toggle VPN connection on/off
     func toggle(_ on: Bool) {
         guard let tunnelManager = tunnelManager else {
-            logger.error("No tunnel manager available")
+            logger.error("No tunnel manager available - ensuring manager exists")
+            // Try to create manager if it doesn't exist
+            ensureManager { [weak self] manager in
+                guard let self = self, let manager = manager else { return }
+                self.tunnelManager = manager
+                self.performToggle(on)
+            }
             return
         }
         

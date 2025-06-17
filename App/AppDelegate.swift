@@ -30,7 +30,7 @@ struct ContentView: View {
                         .font(.title2.weight(.semibold))
                 }
                 .toggleStyle(SwitchToggleStyle())
-                .disabled(vpnManager.status == .reasserting)
+                .disabled(vpnManager.isLoading || vpnManager.status == .reasserting)
                 .padding(.horizontal, 40)
                 
                 Text(statusText)
@@ -56,6 +56,10 @@ struct ContentView: View {
     }
     
     private var statusText: String {
+        if vpnManager.isLoading {
+            return "Loading configuration..."
+        }
+        
         switch vpnManager.status {
         case .connected:
             return "Connected to MASQUE relay"
