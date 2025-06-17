@@ -1,60 +1,76 @@
 import SwiftUI
+import NetworkExtension
 
 @main
 struct ConcealConnectApp: App {
-    @StateObject private var vpnManager = VPNManager()
-    
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .environmentObject(vpnManager)
         }
     }
 }
 
 struct ContentView: View {
-    @EnvironmentObject var vpnManager: VPNManager
+    @StateObject private var vpnManager = VPNManager.shared
     
     var body: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 24) {
             Text("👋 Conceal Connect")
                 .font(.largeTitle)
-                .padding()
+                .padding(.top, 40)
             
-            Text("Status: \(statusText)")
-                .font(.headline)
+            Spacer()
             
-            Text("On-Demand Rules Active")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
+            VStack(spacing: 16) {
+                Toggle(isOn: Binding(
+                    get: { vpnManager.status == .connected || vpnManager.status == .connecting },
+                    set: { vpnManager.toggle($0) }
+                )) {
+                    Text("Private Access")
+                        .font(.title2.weight(.semibold))
+                }
+                .toggleStyle(SwitchToggleStyle())
+                .disabled(vpnManager.status == .reasserting)
+                .padding(.horizontal, 40)
+                
+                Text(statusText)
+                    .font(.footnote)
+                    .foregroundColor(.secondary)
+            }
             
-            Text("Tunnel will automatically connect for:")
-                .font(.caption)
+            Spacer()
             
-            Text("*.masque.test domains")
-                .font(.caption)
-                .monospaced()
-                .padding(.horizontal)
+            VStack(spacing: 8) {
+                Text("On-Demand Rules")
+                    .font(.caption.weight(.semibold))
+                    .foregroundColor(.secondary)
+                
+                Text("Auto-connects for *.masque.test domains")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            .padding(.bottom, 40)
         }
         .padding()
+        .onAppear { vpnManager.loadTunnelConfiguration() }
     }
     
     private var statusText: String {
         switch vpnManager.status {
-        case .invalid:
-            return "Invalid"
-        case .disconnected:
-            return "Disconnected"
+        case .connected:
+            return "Connected to MASQUE relay"
         case .connecting:
             return "Connecting..."
-        case .connected:
-            return "Connected"
-        case .reasserting:
-            return "Reasserting..."
+        case .disconnected:
+            return "Not connected"
         case .disconnecting:
             return "Disconnecting..."
+        case .reasserting:
+            return "Reasserting..."
+        case .invalid:
+            return "Configuration needed"
         @unknown default:
-            return "Unknown"
+            return "Unknown status"
         }
     }
 }

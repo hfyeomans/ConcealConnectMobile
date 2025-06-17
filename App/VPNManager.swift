@@ -3,15 +3,18 @@ import NetworkExtension
 import os.log
 
 /// Manages the VPN tunnel provider configuration and lifecycle
-class VPNManager: ObservableObject {
+@MainActor
+final class VPNManager: ObservableObject {
     private let logger = Logger(subsystem: "com.conceal.App", category: "VPNManager")
     
     @Published var isConnected = false
     @Published var status: NEVPNStatus = .invalid
     
+    static let shared = VPNManager()
+    
     private var tunnelManager: NETunnelProviderManager?
     
-    init() {
+    private init() {
         loadTunnelConfiguration()
     }
     
@@ -106,29 +109,51 @@ class VPNManager: ObservableObject {
         }
     }
     
-    /// Manually starts the tunnel (for TP-4, not needed for on-demand)
-    func connect() {
+    /// Toggle VPN connection on/off
+    func toggle(_ on: Bool) {
         guard let tunnelManager = tunnelManager else {
             logger.error("No tunnel manager available")
             return
         }
         
-        do {
-            try tunnelManager.connection.startVPNTunnel()
-            logger.info("Starting VPN tunnel")
-        } catch {
-            logger.error("Failed to start VPN tunnel: \(error.localizedDescription)")
+        // Disable on-demand when using manual toggle
+        if tunnelManager.isOnDemandEnabled {
+            tunnelManager.isOnDemandEnabled = false
+            tunnelManager.saveToPreferences { [weak self] error in
+                if let error = error {
+                    self?.logger.error("Failed to update on-demand setting: \(error.localizedDescription)")
+                    return
+                }
+                self?.performToggle(on)
+            }
+        } else {
+            performToggle(on)
         }
+    }
+    
+    private func performToggle(_ on: Bool) {
+        guard let tunnelManager = tunnelManager else { return }
+        
+        do {
+            if on {
+                try tunnelManager.connection.startVPNTunnel()
+                logger.info("Starting VPN tunnel")
+            } else {
+                tunnelManager.connection.stopVPNTunnel()
+                logger.info("Stopping VPN tunnel")
+            }
+        } catch {
+            logger.error("Toggle VPN failed: \(error.localizedDescription)")
+        }
+    }
+    
+    /// Manually starts the tunnel (for TP-4, not needed for on-demand)
+    func connect() {
+        toggle(true)
     }
     
     /// Manually stops the tunnel
     func disconnect() {
-        guard let tunnelManager = tunnelManager else {
-            logger.error("No tunnel manager available")
-            return
-        }
-        
-        tunnelManager.connection.stopVPNTunnel()
-        logger.info("Stopping VPN tunnel")
+        toggle(false)
     }
 }
