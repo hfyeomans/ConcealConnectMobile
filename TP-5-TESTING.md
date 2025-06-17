@@ -16,6 +16,57 @@ The following must be achieved for TP-5 completion:
 2. ✅ **curl http://masque.test in Safari** returns the test HTML page
 3. ✅ **No crashes** when toggling connect/disconnect five times in a row
 
+## Tunnel Configuration Options
+
+Before testing, you should understand the two tunnel configuration modes available in ConcealConnect Mobile. The current default is to route all traffic through the VPN, but you can also configure split tunneling for specific domains.
+
+### All Traffic Mode (Current Default)
+
+This mode routes all device traffic through the MASQUE tunnel, providing complete privacy protection.
+
+**Current configuration in PacketTunnelProvider.swift (lines 54-61):**
+```swift
+// Configure IPv4 settings for all traffic
+let ipv4Settings = NEIPv4Settings(addresses: ["10.0.0.2"], subnetMasks: ["255.255.255.0"])
+ipv4Settings.includedRoutes = [NEIPv4Route.default()]  // Route all traffic
+tunnelSettings.ipv4Settings = ipv4Settings
+
+// Configure DNS without match domains
+let dnsSettings = NEDNSSettings(servers: ["8.8.8.8", "8.8.4.4"])
+// No matchDomains set - DNS applies to all traffic
+tunnelSettings.dnsSettings = dnsSettings
+```
+
+### Split Tunnel Mode (masque.test Only)
+
+This mode only tunnels traffic for masque.test domains, allowing other traffic to bypass the VPN for better performance.
+
+**To enable split tunneling, modify PacketTunnelProvider.swift (lines 54-61):**
+```swift
+// Configure IPv4 settings for split tunneling
+let ipv4Settings = NEIPv4Settings(addresses: ["10.0.0.2"], subnetMasks: ["255.255.255.0"])
+ipv4Settings.includedRoutes = []  // Empty array - no default route
+tunnelSettings.ipv4Settings = ipv4Settings
+
+// Configure DNS with match domains
+let dnsSettings = NEDNSSettings(servers: ["8.8.8.8", "8.8.4.4"])
+dnsSettings.matchDomains = ["masque.test"]  // Only tunnel traffic for masque.test
+tunnelSettings.dnsSettings = dnsSettings
+```
+
+### Testing Considerations
+
+- **All Traffic Mode**: When testing with all traffic mode, you'll notice the VPN icon is always active and all network requests go through the tunnel. This may affect general browsing performance.
+
+- **Split Tunnel Mode**: When testing with split tunnel mode, only requests to masque.test will go through the tunnel. Other traffic will use your regular internet connection. The VPN icon may not always be visible.
+
+### Verifying Configuration
+
+To verify which mode is active:
+1. Check console logs for included routes configuration
+2. Test accessing both masque.test and other websites
+3. Monitor packet flow in the console to see which traffic is being tunneled
+
 ## Testing Steps
 
 ### 1. Build and Install

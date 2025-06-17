@@ -126,6 +126,60 @@ This project is under active development as part of the Tunnel Provider MVP spri
 
 This is a private project. For questions or issues, please contact the development team.
 
+## Tunnel Configuration
+
+ConcealConnect Mobile supports two tunnel configuration modes: routing all traffic through the VPN or split tunneling for specific domains only.
+
+### All Traffic Mode (Default)
+
+By default, the tunnel is configured to route all device traffic through the MASQUE tunnel. This provides maximum privacy but may impact performance for non-sensitive traffic.
+
+**Configuration in PacketTunnelProvider.swift:**
+```swift
+// Configure IPv4 settings for all traffic
+let ipv4Settings = NEIPv4Settings(addresses: ["10.0.0.2"], subnetMasks: ["255.255.255.0"])
+ipv4Settings.includedRoutes = [NEIPv4Route.default()]  // Route all traffic
+tunnelSettings.ipv4Settings = ipv4Settings
+
+// Configure DNS without match domains
+let dnsSettings = NEDNSSettings(servers: ["8.8.8.8", "8.8.4.4"])
+// No matchDomains set - DNS applies to all traffic
+tunnelSettings.dnsSettings = dnsSettings
+```
+
+### Split Tunnel Mode (Domain-Specific)
+
+For better performance, you can configure the tunnel to only route traffic for specific domains (e.g., masque.test) while other traffic goes directly to the internet.
+
+**Configuration in PacketTunnelProvider.swift:**
+```swift
+// Configure IPv4 settings for split tunneling
+let ipv4Settings = NEIPv4Settings(addresses: ["10.0.0.2"], subnetMasks: ["255.255.255.0"])
+ipv4Settings.includedRoutes = []  // Empty array - no default route
+tunnelSettings.ipv4Settings = ipv4Settings
+
+// Configure DNS with match domains
+let dnsSettings = NEDNSSettings(servers: ["8.8.8.8", "8.8.4.4"])
+dnsSettings.matchDomains = ["masque.test"]  // Only tunnel traffic for masque.test
+tunnelSettings.dnsSettings = dnsSettings
+```
+
+### Implementation Location
+
+These changes should be made in the `startTunnel` method of `PacketTunnelProvider.swift`, specifically in lines 54-61 where the tunnel network settings are configured.
+
+### Choosing a Configuration
+
+- **Use All Traffic Mode when:**
+  - Maximum privacy is required
+  - Testing full VPN functionality
+  - All device traffic should be protected
+
+- **Use Split Tunnel Mode when:**
+  - Only specific services need protection
+  - Better performance is needed for general browsing
+  - Testing domain-specific routing
+
 ## License
 
 Proprietary - All rights reserved
