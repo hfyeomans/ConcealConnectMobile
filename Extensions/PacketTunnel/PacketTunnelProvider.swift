@@ -16,6 +16,7 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
     private var isRunning = false
     private let packetQueue = DispatchQueue(label: "com.conceal.PacketTunnel.packets", qos: .userInitiated)
     private let pollQueue = DispatchQueue(label: "com.conceal.PacketTunnel.poll", qos: .userInitiated)
+    private var hasLoggedHandshake = false
     
     override init() {
         super.init()
@@ -38,7 +39,14 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
         do {
             // Call connect() on MasqueClient
             try masqueClient?.connect(host: serverHost, port: serverPort)
-            logger.log("MasqueClient connected successfully to \(serverHost):\(serverPort)")
+            logger.log("MasqueClient connect() called successfully to \(serverHost):\(serverPort)")
+            
+            // Check if handshake is complete (it may not be immediate)
+            if let client = masqueClient, client.isHandshakeComplete() {
+                logger.log("MasqueClient: handshake completed")
+            } else {
+                logger.log("MasqueClient: handshake pending, will complete asynchronously")
+            }
             
             // Configure tunnel settings
             let tunnelSettings = NEPacketTunnelNetworkSettings(tunnelRemoteAddress: serverHost)
@@ -75,10 +83,28 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
         // Stop packet handling
         isRunning = false
         
-        // Clean up MasqueClient
-        masqueClient = nil
+        // Reset handshake flag
+        hasLoggedHandshake = false
         
-        completionHandler()
+        // Give queues time to finish current operations
+        let group = DispatchGroup()
+        
+        group.enter()
+        packetQueue.async {
+            group.leave()
+        }
+        
+        group.enter()
+        pollQueue.async {
+            group.leave()
+        }
+        
+        group.notify(queue: .main) { [weak self] in
+            // Clean up MasqueClient after queues are done
+            self?.masqueClient = nil
+            self?.logger.log("Packet tunnel provider stopped cleanly")
+            completionHandler()
+        }
     }
     
     override func handleAppMessage(_ messageData: Data, completionHandler: ((Data?) -> Void)?) {
@@ -159,6 +185,12 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
     private func pollInboundData() {
         pollQueue.async { [weak self] in
             guard let self = self, self.isRunning else { return }
+            
+            // Check for handshake completion periodically
+            if !self.hasLoggedHandshake, let client = self.masqueClient, client.isHandshakeComplete() {
+                self.hasLoggedHandshake = true
+                self.logger.log("MasqueClient: handshake completed")
+            }
             
             // Poll for data with a reasonable timeout
             if let client = self.masqueClient,
