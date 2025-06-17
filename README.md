@@ -111,6 +111,7 @@ The tunnel is configured to automatically connect when accessing:
 - `*.masque.test`
 
 The MASQUE server is currently hard-coded to `masque.test:443` for testing.
+The MASQUE tunnel endpoint is currently hard-coded to 10.0.150.43:6121 for testing.
 
 ## Development Status
 
