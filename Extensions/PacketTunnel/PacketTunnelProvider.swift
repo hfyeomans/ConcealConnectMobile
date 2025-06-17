@@ -141,7 +141,7 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
                 return
             }
             
-            let streamId = client.send(packet)
+            let streamId = try client.send(packet)
             logger.debug("Sent \(protocolName) packet of size \(packet.count) bytes via MASQUE (stream ID: \(streamId))")
         } catch {
             logger.error("Failed to send packet via MASQUE: \(error.localizedDescription)")
