@@ -100,7 +100,19 @@ final class VPNManager: ObservableObject {
                 completion(nil)
             } else {
                 self.logger.info("Tunnel configuration saved successfully")
-                completion(tunnelManager)
+                // Reload from preferences to ensure we have the saved configuration
+                NETunnelProviderManager.loadAllFromPreferences { managers, loadError in
+                    if let loadError = loadError {
+                        self.logger.error("Failed to reload tunnel configuration: \(loadError.localizedDescription)")
+                        completion(nil)
+                    } else if let reloadedManager = managers?.first {
+                        self.logger.info("Tunnel configuration reloaded successfully")
+                        completion(reloadedManager)
+                    } else {
+                        self.logger.error("No tunnel configuration found after save")
+                        completion(nil)
+                    }
+                }
             }
         }
     }
