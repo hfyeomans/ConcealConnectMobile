@@ -39,8 +39,13 @@ targets:
       path: App/App.entitlements
     dependencies:
       - target: TunnelCore
+      - target: PacketTunnel
+        embed: true
+        codeSign: true
+      - sdk: NetworkExtension.framework
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: com.conceal.concealconnect
+      DEVELOPMENT_TEAM: AC3LGVEJJ8
 
   PacketTunnel:
     type: app-extension
@@ -57,8 +62,10 @@ targets:
       path: Extensions/PacketTunnel/PacketTunnel.entitlements
     dependencies:
       - target: TunnelCore
+      - sdk: NetworkExtension.framework
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: com.conceal.concealconnect.PacketTunnel
+      DEVELOPMENT_TEAM: AC3LGVEJJ8
       OTHER_SWIFT_FLAGS: -Xcc -fmodule-map-file=$(SRCROOT)/TunnelCore/include/module.modulemap
       HEADER_SEARCH_PATHS: 
         - $(SRCROOT)/TunnelCore/include
@@ -79,3 +86,20 @@ targets:
       CODE_SIGN_IDENTITY: ""
     dependencies:
       - target: TunnelCore
+
+schemes:
+  ConcealConnect:
+    build:
+      targets:
+        ConcealConnect: all
+        PacketTunnel: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release

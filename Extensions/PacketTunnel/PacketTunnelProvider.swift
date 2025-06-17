@@ -16,6 +16,7 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
     private var isRunning = false
     private let packetQueue = DispatchQueue(label: "com.conceal.PacketTunnel.packets", qos: .userInitiated)
     private let pollQueue = DispatchQueue(label: "com.conceal.PacketTunnel.poll", qos: .userInitiated)
+    private var hasLoggedHandshake = false
     
     override init() {
         super.init()
@@ -38,18 +39,27 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
         do {
             // Call connect() on MasqueClient
             try masqueClient?.connect(host: serverHost, port: serverPort)
-            logger.log("MasqueClient connected successfully to \(serverHost):\(serverPort)")
+            logger.log("MasqueClient connect() called successfully to \(serverHost):\(serverPort)")
+            
+            // Check if handshake is complete (it may not be immediate)
+            if let client = masqueClient, client.isHandshakeComplete() {
+                logger.log("MasqueClient: handshake completed")
+            } else {
+                logger.log("MasqueClient: handshake pending, will complete asynchronously")
+            }
             
             // Configure tunnel settings
             let tunnelSettings = NEPacketTunnelNetworkSettings(tunnelRemoteAddress: serverHost)
             
             // Configure IPv4 settings
             let ipv4Settings = NEIPv4Settings(addresses: ["10.0.0.2"], subnetMasks: ["255.255.255.0"])
-            ipv4Settings.includedRoutes = [NEIPv4Route.default()]
+            ipv4Settings.includedRoutes = [] // Split tunnel - no default route
             tunnelSettings.ipv4Settings = ipv4Settings
             
             // Configure DNS
-            tunnelSettings.dnsSettings = NEDNSSettings(servers: ["8.8.8.8", "8.8.4.4"])
+            let dnsSettings = NEDNSSettings(servers: ["8.8.8.8", "8.8.4.4"])
+            dnsSettings.matchDomains = ["masque.test"] // Only tunnel masque.test traffic
+            tunnelSettings.dnsSettings = dnsSettings
             
             // Apply tunnel settings
             setTunnelNetworkSettings(tunnelSettings) { [weak self] error in
@@ -75,10 +85,28 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
         // Stop packet handling
         isRunning = false
         
-        // Clean up MasqueClient
-        masqueClient = nil
+        // Reset handshake flag
+        hasLoggedHandshake = false
         
-        completionHandler()
+        // Give queues time to finish current operations
+        let group = DispatchGroup()
+        
+        group.enter()
+        packetQueue.async {
+            group.leave()
+        }
+        
+        group.enter()
+        pollQueue.async {
+            group.leave()
+        }
+        
+        group.notify(queue: .main) { [weak self] in
+            // Clean up MasqueClient after queues are done
+            self?.masqueClient = nil
+            self?.logger.log("Packet tunnel provider stopped cleanly")
+            completionHandler()
+        }
     }
     
     override func handleAppMessage(_ messageData: Data, completionHandler: ((Data?) -> Void)?) {
@@ -142,6 +170,16 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
         
         let protocolName = ipProtocol == IPPROTO_UDP ? "UDP" : "TCP"
         
+        // Debug: Log specific ports
+        if packet.count >= 24 {
+            let destPort = (UInt16(packet[22]) << 8) | UInt16(packet[23])
+            if destPort == 53 {
+                logger.debug("DNS query detected on port 53")
+            } else if destPort == 80 || destPort == 6121 {
+                logger.debug("HTTP request detected to port \(destPort)")
+            }
+        }
+        
         // Send the packet through MASQUE
         do {
             guard let client = masqueClient else {
@@ -159,6 +197,12 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
     private func pollInboundData() {
         pollQueue.async { [weak self] in
             guard let self = self, self.isRunning else { return }
+            
+            // Check for handshake completion periodically
+            if !self.hasLoggedHandshake, let client = self.masqueClient, client.isHandshakeComplete() {
+                self.hasLoggedHandshake = true
+                self.logger.log("MasqueClient: handshake completed")
+            }
             
             // Poll for data with a reasonable timeout
             if let client = self.masqueClient,
