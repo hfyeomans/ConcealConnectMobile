@@ -16,7 +16,13 @@ final class VPNManager: ObservableObject {
     private var tunnelManager: NETunnelProviderManager?
     
     private init() {
+        #if targetEnvironment(simulator)
+        logger.warning("NetworkExtension is not supported in the iOS Simulator. VPN functionality will not work.")
+        self.status = .invalid
+        self.isLoading = false
+        #else
         loadTunnelConfiguration()
+        #endif
     }
     
     /// Loads the existing tunnel configuration or creates a new one
@@ -128,6 +134,11 @@ final class VPNManager: ObservableObject {
     
     /// Toggle VPN connection on/off
     func toggle(_ on: Bool) {
+        #if targetEnvironment(simulator)
+        logger.warning("Cannot toggle VPN in simulator - NetworkExtension not supported")
+        return
+        #endif
+        
         guard let tunnelManager = tunnelManager else {
             logger.error("No tunnel manager available - ensuring manager exists")
             // Try to create manager if it doesn't exist
